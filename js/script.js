@@ -5,7 +5,8 @@ var topRentalsUrl = genApiUrl(
 );
 
 var vis;
-var visSize = 740;
+var visSize = 320;
+var visWidth = 960;
 var moviePosterW = 60;
 var moviePosterH = 90;
 
@@ -28,21 +29,21 @@ $(document).ready(function() {
 
   vis = d3.select("#vis").
     append("svg:svg").
-    attr("width", visSize).
+    attr("width", visWidth).
     attr("height", visSize);
 
-  vis.append("svg:rect").
-    attr("x", visSize/2 - barThickness/2).
-    attr("y", 0).
-    attr("height", visSize).
-    attr("width", barThickness).
-    attr("fill", barColor);
-  vis.append("svg:rect").
-    attr("x", 0).
-    attr("y", visSize/2 - barThickness/2).
-    attr("height", barThickness).
-    attr("width", visSize).
-    attr("fill", barColor);
+  //vis.append("svg:rect").
+    //attr("x", visWidth/2 - barThickness/2).
+    //attr("y", 0).
+    //attr("height", visSize).
+    //attr("width", barThickness).
+    //attr("fill", barColor);
+  //vis.append("svg:rect").
+    //attr("x", 0).
+    //attr("y", visSize/2 - barThickness/2).
+    //attr("height", barThickness).
+    //attr("width", visWidth).
+    //attr("fill", barColor);
 
 
   var movies = [
@@ -62,7 +63,7 @@ $(document).ready(function() {
 function setSeedMovie(movie) {
   appendMovieToVis(
     movie,
-    visSize/2 - moviePosterW/2,
+    visWidth/2 - moviePosterW/2,
     visSize - (visSize/2 + moviePosterH/2)
   );
 
@@ -71,6 +72,7 @@ function setSeedMovie(movie) {
     then(function(){
     
     plotMoviesSimilarTo(movie);
+         displayMovieDetails(movie);
   })
 }
 
@@ -91,14 +93,8 @@ function appendMovieToVis(movie, x, y) {
 function plotMoviesSimilarTo(movie) {
   calcQuadrantsForSimilarTo(movie);
 
-  //var x = d3.scale.linear().
-    //domain([-numMoviesSimilarTo, numMoviesSimilarTo]).
-    //range([0, visSize]);
-  //var y = d3.scale.linear().
-    //domain([-numMoviesSimilarTo, numMoviesSimilarTo]).
-    //range([0, visSize]);
   var x = function(v) {
-    return visSize/2 + v*moviePosterW - moviePosterW/2;
+    return visWidth/2 + v*moviePosterW - moviePosterW/2;
   };
   var y = function(v) {
     return visSize - (visSize/2 + v*moviePosterH + moviePosterH/2);
@@ -120,22 +116,18 @@ function plotMoviesSimilarTo(movie) {
       case 1:
         appendMovieToVis(curMovie, x(q1X), y(q1Y));
         q1X++;
-        //q1Y++;
         break;
       case 2:
         appendMovieToVis(curMovie, x(q2X), y(q2Y));
         q2X--;
-        //q2Y++;
         break;
       case 3:
         appendMovieToVis(curMovie, x(q3X), y(q3Y));
         q3X--;
-        //q3Y++;
         break;
       case 4:
         appendMovieToVis(curMovie, x(q4X), y(q4Y));
         q4X++;
-        //q4Y++;
         break;
     }
 
@@ -146,10 +138,46 @@ function displayMovieDetails(movie) {
   var details = $("#details");
   details.empty();
 
+  var genres = $('<ul/>').addClass('genres')
+  if (typeof movie.genres !== "undefined") {
+    genres.append($('<span/>').addClass('heading').text('Genres:'));
+    movie.genres.map(function(genre) {
+      genres.append($('<li/>').text(genre));
+    });
+  }
+
   details.append(
-    $('<h1/>').text(movie.title),
-    $('<img/>').attr('src', movie.posters.profile),
-    $('<p/>').text(movie.synopsis)
+    $('<img/>').addClass('poster').attr('src', movie.posters.profile),
+    
+    $('<div/>').addClass('col1').append(
+      $('<div/>').addClass('title').text(movie.title),
+      $('<div/>').addClass('plot').text(movie.synopsis)
+    ),
+
+    $('<div/>').addClass('col2').append(
+      
+      $('<div/>').addClass('year').text('Year: ' + movie.year),
+
+      $('<div/>').addClass('stats').append(
+        $('<div/>').addClass('score').text('Audience Score: ' + movie.ratings.audience_score),
+        $('<div/>').addClass('score').text('Critics Score: ' + movie.ratings.critics_score)
+      ),
+      
+      genres,
+      
+      $('<div/>').addClass('external').append(
+        $('<a/>').attr(
+          {
+            href: 'http://www.imdb.com/title/tt'+movie.alternate_ids.imdb,
+            target: '_blank',
+          }).append($('<img/>').attr('src', 'img/imdb.png')),
+        $('<a/>').attr(
+          {
+            href: movie.links.alternate,
+            target: '_blank',
+          }).append($('<img/>').attr('src', 'img/rt.png'))
+      )
+    )
   );
 }
 

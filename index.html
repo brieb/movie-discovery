@@ -5,20 +5,24 @@
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/d3/d3.js"></script>
     <script type="text/javascript" src="js/script.js"></script>
+    <link href="http://fonts.googleapis.com/css?family=Open Sans&subset=latin" rel="stylesheet" type="text/css">
+
   </head>
   <body>
     <div id="page">
 
-      <div id="sidebar">
+      <div id="header">
         <div id="logo">DVD Explorer</div>
-        <input type="text" name="search" placeholder="Search for a DVD..." />
-
-        <div id="details"></div>
+        <div id="search">
+          <input type="text" name="search" placeholder="Search for a DVD..." />
+        </div>
       </div>
 
       <div id="main">
         <div id="vis"></div>
         <div id="breadcrumb"></div>
+        <div id="details"></div>
+        <div class="clear"></div>
       </div>
 
     </div>

@@ -2243,6 +2243,8 @@ html, body {
     font-weight: bold; }
   #details .genres li {
     text-indent: 10px; }
+  #details .critics_consensus {
+    margin-bottom: 10px; }
 
 #vis {
   font-size: 12px;

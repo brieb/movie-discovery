@@ -15,6 +15,9 @@ var barThickness = 1;
 
 var seedMovie = null;
 
+var seedMovieElem = null;
+var similarMovieElems = [];
+
 var numMoviesSimilarTo = 5;
 
 $(document).ready(function() {
@@ -30,7 +33,7 @@ $(document).ready(function() {
   var movie = { id: '770672122' };
   $.when(getMovieInfo(movie)).
     then(function() {
-    setSeedMovie(movie);
+      setSeedMovie(movie);
   });
 
 
@@ -39,7 +42,7 @@ $(document).ready(function() {
 function initAutoComplete() {
   var search = $('#search');
   var searchResults = $('#search_results');
-  
+
   searchResults.hide();
 
   search.keyup(function(event) {
@@ -91,7 +94,7 @@ function renderSearchResults(movies) {
         search.val('');
       };
     })(movie));
-    
+
     searchResults.append(result);
   };
 }
@@ -103,39 +106,52 @@ function filterToDVDs(movies) {
   });
 }
 
-function setSeedMovie(movie) {
-  clearMoviesFromVis();
+function setSeedMovie(movie, target) {
+  clearElems(vis.selectAll('image.similar'));
 
-  appendMovieToVis(
-    movie,
-    visWidth/2 - moviePosterW/2,
-    visSize - (visSize/2 + moviePosterH/2)
-  );
+  var seedX = visWidth/2 - moviePosterW/2;
+  var seedY = visSize - (visSize/2 + moviePosterH/2);
 
-  var promise = getMoviesSimilarTo(movie);
+  if (typeof target === 'undefined') {
+    appendMovieToVis(movie, seedX, seedY, 'seed');
+  } else {
+    clearElems(vis.selectAll('image.seed'));
+    d3.select(target).
+      transition().
+      attr("class", 'seed').
+      attr("x", seedX).
+      attr("y", seedY);
+  }
+
   $.when(getMoviesSimilarTo(movie)).
-    then(function(){
-    displayMovieDetails(movie);
-    plotMoviesSimilarTo(movie);
+    then(function() {
+    //$.when(getMoviePlotImdb(movie)).
+      //then(function() {
+      displayMovieDetails(movie);
+      plotMoviesSimilarTo(movie);
+    //});
   });
 
   seedMovie = movie;
 }
 
-function clearMoviesFromVis() {
-  vis.selectAll('image').remove();
+function convertToSeed(movie, target) {
+
 }
 
-function appendMovieToVis(movie, x, y) {
-  vis.
-    append("svg:image").
+function clearElems(elems) {
+  elems.transition().style("opacity", 0).remove();
+}
+
+function appendMovieToVis(movie, x, y, selClass) {
+  vis.append("svg:image").
+    attr("class", selClass).
     attr("width", moviePosterW).
     attr("height", moviePosterH).
     attr("x", x).
     attr("y", y).
     attr("xlink:href", movie.posters.thumbnail).
-    on("mouseover",
-       function(e) {
+    on("mouseover", function(e) {
          displayMovieDetails(movie);
        }).
          on("mouseout",
@@ -144,8 +160,11 @@ function appendMovieToVis(movie, x, y) {
             }).
               on("click",
                  function(e) {
-                   setSeedMovie(movie);
-                 });
+                   setSeedMovie(movie, this);
+                 }).
+                   style("opacity", 0).
+                   transition().
+                   style("opacity", 1);
 }
 
 function plotMoviesSimilarTo(movie) {
@@ -172,19 +191,19 @@ function plotMoviesSimilarTo(movie) {
 
     switch (curMovie.quad) {
       case 1:
-        appendMovieToVis(curMovie, x(q1X), y(q1Y));
+        appendMovieToVis(curMovie, x(q1X), y(q1Y), 'similar');
       q1X++;
       break;
       case 2:
-        appendMovieToVis(curMovie, x(q2X), y(q2Y));
+        appendMovieToVis(curMovie, x(q2X), y(q2Y), 'similar');
       q2X--;
       break;
       case 3:
-        appendMovieToVis(curMovie, x(q3X), y(q3Y));
+        appendMovieToVis(curMovie, x(q3X), y(q3Y), 'similar');
       q3X--;
       break;
       case 4:
-        appendMovieToVis(curMovie, x(q4X), y(q4Y));
+        appendMovieToVis(curMovie, x(q4X), y(q4Y), 'similar');
       q4X++;
       break;
     }
@@ -205,8 +224,8 @@ function displayMovieDetails(movie) {
   }
 
   var links = $('<div/>').addClass('external');
-  if (typeof movie.alternate !== "undefined" &&
-     typeof movie.alternate.imdb !== "undefined") {
+  if (typeof movie.alternate_ids !== "undefined" &&
+      typeof movie.alternate_ids.imdb !== "undefined") {
     links.append(
       $('<a/>').attr(
         {
@@ -228,6 +247,7 @@ function displayMovieDetails(movie) {
 
     $('<div/>').addClass('col1').append(
       $('<div/>').addClass('title').text(movie.title),
+      $('<div/>').addClass('critics_consensus').text(movie.critics_consensus),
       $('<div/>').addClass('plot').text(movie.synopsis)
     ),
 
@@ -236,8 +256,8 @@ function displayMovieDetails(movie) {
       $('<div/>').addClass('year').text('Year: ' + movie.year),
 
       //$('<div/>').addClass('stats').append(
-        //$('<div/>').addClass('score').text('Audience Score: ' + movie.ratings.audience_score),
-        //$('<div/>').addClass('score').text('Critics Score: ' + movie.ratings.critics_score)
+      //$('<div/>').addClass('score').text('Audience Score: ' + movie.ratings.audience_score),
+      //$('<div/>').addClass('score').text('Critics Score: ' + movie.ratings.critics_score)
       //),
       genres,
       links
@@ -250,7 +270,6 @@ function displayMovieDetails(movie) {
 }
 
 function renderRatingsVis(ratings) {
-  console.log(ratings);
   var data = [
     { type: 'Audience', rating: ratings.audience_score },
     { type: 'Critics', rating: ratings.critics_score }
@@ -282,31 +301,31 @@ function renderRatingsVis(ratings) {
     attr("width", barWidth).
     attr("fill", "#2d578b");
 
-ratingsVis.selectAll("text").
-  data(data).
-  enter().
-  append("svg:text").
-  attr("x", function(datum, index) { return x(index) + barWidth; }).
-  attr("y", function(datum) { return height - y(datum.rating); }).
-  attr("dx", -barWidth/2).
-  attr("dy", "1.2em").
-  attr("text-anchor", "middle").
-  attr("style", "font-size: 11;").
-  text(function(datum) { return datum.rating;}).
-  attr("fill", "white");
+  ratingsVis.selectAll("text").
+    data(data).
+    enter().
+    append("svg:text").
+    attr("x", function(datum, index) { return x(index) + barWidth; }).
+    attr("y", function(datum) { return height - y(datum.rating); }).
+    attr("dx", -barWidth/2).
+    attr("dy", "1.2em").
+    attr("text-anchor", "middle").
+    attr("style", "font-size: 11;").
+    text(function(datum) { return datum.rating;}).
+    attr("fill", "white");
 
-ratingsVis.selectAll("text.yAxis").
-  data(data).
-  enter().append("svg:text").
-  attr("x", function(datum, index) { return y(index) + height - 20; }).
-  attr("y", function(datum, index) { return -x(index) - 5; }).
-  attr("dx", -barWidth/2 - 5).
-  attr("text-anchor", "middle").
-  attr("style", "font-size: 11;").
-  text(function(datum) { return datum.type;}).
-  attr("transform", "rotate(90)").
-  attr("fill", "white").
-  attr("class", "yAxis");
+  ratingsVis.selectAll("text.yAxis").
+    data(data).
+    enter().append("svg:text").
+    attr("x", function(datum, index) { return y(index) + height - 20; }).
+    attr("y", function(datum, index) { return -x(index) - 5; }).
+    attr("dx", -barWidth/2 - 5).
+    attr("text-anchor", "middle").
+    attr("style", "font-size: 11;").
+    text(function(datum) { return datum.type;}).
+    attr("transform", "rotate(90)").
+    attr("fill", "white").
+    attr("class", "yAxis");
 
 
 }
@@ -324,10 +343,10 @@ function appendApiKey(url) {
 }
 
 function genApiUrl(method, params) {
-  //var baseUrl = "http://api.rottentomatoes.com/api/public/v1.0";
-  //var url = appendApiKey(baseUrl + method + '.json');
-  var baseUrl = "http://localhost/cs448b/movie-discovery/rt_cache";
-  var url = appendApiKey(baseUrl + method + '.php');
+  var baseUrl = "http://api.rottentomatoes.com/api/public/v1.0";
+  var url = appendApiKey(baseUrl + method + '.json');
+  //var baseUrl = "http://localhost/cs448b/movie-discovery/rt_cache";
+  //var url = appendApiKey(baseUrl + method + '.php');
 
   url += '&callback=?';
 
@@ -347,6 +366,17 @@ function getMovieInfo(movie) {
       $.extend(movie, data);
     }
   );
+}
+
+function getMoviePlotImdb(movie) {
+  if (typeof movie.alternate_ids !== "undefined" &&
+      typeof movie.alternate_ids.imdb !== "undefined") {
+    return $.getJSON(
+      'http://www.imdbapi.com/?i=tt'+movie.alternate_ids.imdb+'&callback=?',
+    function(data) {
+      movie.plot = data.Plot;
+    });
+  }
 }
 
 function getMoviesCast(movies) {

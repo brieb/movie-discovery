@@ -2218,7 +2218,7 @@ html, body {
   padding-bottom: 10px; }
 
 #details {
-  padding: 10px; }
+  padding: 40px; }
   #details .title {
     font-size: 22px;
     font-weight: bold;
@@ -2233,7 +2233,8 @@ html, body {
     font-size: 13px;
     line-height: 1.3em; }
   #details .col2 {
-    margin-top: 30px; }
+    margin-top: 30px;
+    width: 180px; }
   #details .external {
     margin-top: 20px; }
     #details .external a {
@@ -2245,7 +2246,7 @@ html, body {
 
 #vis {
   font-size: 12px;
-  fill: #666; }
+  fill: #555; }
 
 .clear {
   clear: both; }

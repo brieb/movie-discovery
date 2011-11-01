@@ -20,113 +20,23 @@ var numMoviesSimilarTo = 5;
 $(document).ready(function() {
   initAutoComplete();
 
-  //$.ajax({
-    //url: topRentalsUrl,
-    //dataType: "jsonp",
-    //success: function(data) {
-      //console.log(data);
-    //}
-  //});
-
-
   vis = d3.select("#vis").
     append("svg:svg").
     attr("width", visWidth).
     attr("height", visSize);
 
-  vis.append("svg:rect").
-    attr("x", visWidth/2 - barThickness/2).
-    attr("y", 0).
-    attr("height", visSize).
-    attr("width", barThickness).
-    attr("fill", barColor);
-  vis.append("svg:rect").
-    attr("x", 0).
-    attr("y", visSize/2 - barThickness/2).
-    attr("height", barThickness).
-    attr("width", visWidth).
-    attr("fill", barColor);
-  
-  vis.append('svg:text').
-    attr('x', visWidth - 90).
-    attr('y', 10).
-    attr("dy", "1.2em").
-    attr("text-anchor", "left").
-    text("+ Critics");
-  vis.append('svg:text').
-    attr('x', visWidth - 90).
-    attr('y', 40).
-    attr("text-anchor", "left").
-    text("+ Audience");
-  vis.append('svg:text').
-    attr('x', 10).
-    attr('y', 10).
-    attr("dy", "1.2em").
-    attr("text-anchor", "left").
-    text("+ Critics");
-  vis.append('svg:text').
-    attr('x', 10).
-    attr('y', 40).
-    attr("text-anchor", "left").
-    text("- Audience");
-  vis.append('svg:text').
-    attr('x', 10).
-    attr('y', visSize - 50).
-    attr("dy", "1.2em").
-    attr("text-anchor", "left").
-    text("- Critics");
-  vis.append('svg:text').
-    attr('x', 10).
-    attr('y', visSize - 20).
-    attr("text-anchor", "left").
-    text("- Audience");
-  vis.append('svg:text').
-    attr('x', visWidth - 90).
-    attr('y', visSize - 50).
-    attr("dy", "1.2em").
-    attr("text-anchor", "left").
-    text("- Critics");
-  vis.append('svg:text').
-    attr('x', visWidth - 90).
-    attr('y', visSize - 20).
-    attr("text-anchor", "left").
-    text("+ Audience");
+  labelQuadrants();
 
-
-  var movies = [
-    { id: '770672122' },
-    { id: '770671912' },
-    { id: '9414' }
-  ];
-  var promises = getMoviesInfo(movies);
-  $.when.apply(null, promises).
+  var movie = { id: '770672122' };
+  $.when(getMovieInfo(movie)).
     then(function() {
-    console.log(movies);
-    setSeedMovie(movies[0]);
+    setSeedMovie(movie);
   });
 
 
 });
 
 function initAutoComplete() {
-  //$('#search').autocomplete({
-    //source: function(req, resp) {
-      //$.getJSON(
-        //moviesSearchUrl,
-        //{
-          //q: req.term
-        //},
-        //function(data) {
-          //console.log(data);
-        //}
-      //);
-    //},
-    //minLength: 2,
-    //select: function( event, ui ) {
-    //},
-    
-  //});
-
   var search = $('#search');
   var searchResults = $('#search_results');
   
@@ -325,14 +235,80 @@ function displayMovieDetails(movie) {
 
       $('<div/>').addClass('year').text('Year: ' + movie.year),
 
-      $('<div/>').addClass('stats').append(
-        $('<div/>').addClass('score').text('Audience Score: ' + movie.ratings.audience_score),
-        $('<div/>').addClass('score').text('Critics Score: ' + movie.ratings.critics_score)
-      ),
+      //$('<div/>').addClass('stats').append(
+        //$('<div/>').addClass('score').text('Audience Score: ' + movie.ratings.audience_score),
+        //$('<div/>').addClass('score').text('Critics Score: ' + movie.ratings.critics_score)
+      //),
       genres,
       links
-    )
+    ),
+
+    $('<div/>').attr('id', 'ratings_vis')
   );
+
+  renderRatingsVis(movie.ratings);
+}
+
+function renderRatingsVis(ratings) {
+  console.log(ratings);
+  var data = [
+    { type: 'Audience', rating: ratings.audience_score },
+    { type: 'Critics', rating: ratings.critics_score }
+  ];
+
+  var barWidth = 22;
+  var width = (barWidth + 5) * data.length;
+  var height = 200;
+
+  var x = d3.scale.linear().
+    domain([0, data.length]).
+    range([0, width]);
+  var y = d3.scale.linear().
+    domain([0, 100]).
+    rangeRound([0, height]);
+
+  var ratingsVis = d3.select("#ratings_vis").
+    append("svg:svg").
+    attr("width", width).
+    attr("height", height);
+
+  ratingsVis.selectAll("rect").
+    data(data).
+    enter().
+    append("svg:rect").
+    attr("x", function(datum, index) { return x(index); }).
+    attr("y", function(datum) { return height - y(datum.rating); }).
+    attr("height", function(datum) { return y(datum.rating); }).
+    attr("width", barWidth).
+    attr("fill", "#2d578b");
+
+ratingsVis.selectAll("text").
+  data(data).
+  enter().
+  append("svg:text").
+  attr("x", function(datum, index) { return x(index) + barWidth; }).
+  attr("y", function(datum) { return height - y(datum.rating); }).
+  attr("dx", -barWidth/2).
+  attr("dy", "1.2em").
+  attr("text-anchor", "middle").
+  attr("style", "font-size: 11;").
+  text(function(datum) { return datum.rating;}).
+  attr("fill", "white");
+
+ratingsVis.selectAll("text.yAxis").
+  data(data).
+  enter().append("svg:text").
+  attr("x", function(datum, index) { return y(index) + height - 20; }).
+  attr("y", function(datum, index) { return -x(index) - 5; }).
+  attr("dx", -barWidth/2 - 5).
+  attr("text-anchor", "middle").
+  attr("style", "font-size: 11;").
+  text(function(datum) { return datum.type;}).
+  attr("transform", "rotate(90)").
+  attr("fill", "white").
+  attr("class", "yAxis");
+
+
 }
 
 function calcEucDist(movie1, movie2) {
@@ -364,16 +340,13 @@ function genApiUrl(method, params) {
   return url;
 }
 
-function getMoviesInfo(movies) {
-  var getMovieInfo = function(movie) {
-    return $.getJSON(
-      genApiUrl('/movies/' + movie.id),
-      function(data) {
-        $.extend(movie, data);
-      }
-    );
-  };
-  return $.map(movies, getMovieInfo);
+function getMovieInfo(movie) {
+  return $.getJSON(
+    genApiUrl('/movies/' + movie.id),
+    function(data) {
+      $.extend(movie, data);
+    }
+  );
 }
 
 function getMoviesCast(movies) {
@@ -419,4 +392,64 @@ function calcQuadrantsForSimilarTo(movie) {
       curMovie.quad = 4;
     }
   }
+}
+
+function labelQuadrants() {
+  vis.append("svg:rect").
+    attr("x", visWidth/2 - barThickness/2).
+    attr("y", 0).
+    attr("height", visSize).
+    attr("width", barThickness).
+    attr("fill", barColor);
+  vis.append("svg:rect").
+    attr("x", 0).
+    attr("y", visSize/2 - barThickness/2).
+    attr("height", barThickness).
+    attr("width", visWidth).
+    attr("fill", barColor);
+
+  vis.append('svg:text').
+    attr('x', visWidth - 90).
+    attr('y', 10).
+    attr("dy", "1.2em").
+    attr("text-anchor", "left").
+    text("+ Critics");
+  vis.append('svg:text').
+    attr('x', visWidth - 90).
+    attr('y', 40).
+    attr("text-anchor", "left").
+    text("+ Audience");
+  vis.append('svg:text').
+    attr('x', 10).
+    attr('y', 10).
+    attr("dy", "1.2em").
+    attr("text-anchor", "left").
+    text("+ Critics");
+  vis.append('svg:text').
+    attr('x', 10).
+    attr('y', 40).
+    attr("text-anchor", "left").
+    text("- Audience");
+  vis.append('svg:text').
+    attr('x', 10).
+    attr('y', visSize - 50).
+    attr("dy", "1.2em").
+    attr("text-anchor", "left").
+    text("- Critics");
+  vis.append('svg:text').
+    attr('x', 10).
+    attr('y', visSize - 20).
+    attr("text-anchor", "left").
+    text("- Audience");
+  vis.append('svg:text').
+    attr('x', visWidth - 90).
+    attr('y', visSize - 50).
+    attr("dy", "1.2em").
+    attr("text-anchor", "left").
+    text("- Critics");
+  vis.append('svg:text').
+    attr('x', visWidth - 90).
+    attr('y', visSize - 20).
+    attr("text-anchor", "left").
+    text("+ Audience");
 }

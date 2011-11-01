@@ -108,7 +108,7 @@ html, body {
 }
 
 #details {
-  padding: 10px;
+  padding: 40px;
 
   .title {
     font-size: 22px;
@@ -128,6 +128,7 @@ html, body {
   }
   .col2 {
     margin-top: 30px;
+    width: 180px;
   }
   .external {
     margin-top: 20px;
@@ -147,7 +148,7 @@ html, body {
 
 #vis {
   font-size: 12px;
-  fill: #666;
+  fill: #555;
 }
 
 .clear {

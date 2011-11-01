@@ -1,12 +1,27 @@
 <!DOCTYPE html>
 <html>
-<head>
+  <head>
+    <link rel="stylesheet" type="text/css" href="style.css" />
     <script type="text/javascript" src="js/jquery.js"></script>
     <script type="text/javascript" src="js/d3/d3.js"></script>
     <script type="text/javascript" src="js/script.js"></script>
-</head>
-<body>
-    <div id="vis"></div>
-</body>
+  </head>
+  <body>
+    <div id="page">
+
+      <div id="sidebar">
+        <div id="logo">DVD Explorer</div>
+        <input type="text" name="search" placeholder="Search for a DVD..." />
+
+        <div id="details"></div>
+      </div>
+
+      <div id="main">
+        <div id="vis"></div>
+        <div id="breadcrumb"></div>
+      </div>
+
+    </div>
+  </body>
 </html>
 

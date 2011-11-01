@@ -1,4 +1,23 @@
 @import "reset";
+@import "Absolution/jquery.ui.all";
+
+// Border Radius
+@mixin border_radius($tl: 5px, $tr: 5px, $br: 5px, $bl: 5px) {
+  -moz-border-radius: $tl $tr $br $bl;
+  -webkit-border-top-left-radius: $tl;
+  -webkit-border-top-right-radius: $tr;
+  -webkit-border-bottom-right-radius: $br;
+  -webkit-border-bottom-left-radius: $bl;
+  border-radius: $tl $tr $br $bl;
+}
+
+@mixin shadow($hs: 1px, $vs: 1px, $blur: 5px, $color: #333) {
+	-moz-box-shadow: $hs $vs $blur $color;
+	-webkit-box-shadow: $hs $vs $blur $color;
+	box-shadow: $hs $vs $blur $color;
+}
+
+
 
 html, body {
   width: 100%;
@@ -21,6 +40,7 @@ html, body {
 #header {
   height: 30px;
   padding: 10px;
+  position: relative;
 
   #logo {
     float: left;
@@ -41,6 +61,44 @@ html, body {
 
   #search {
     float: right;
+    width: 320px;
+  }
+
+  #search_results {
+    $posterH: 50px;
+
+    width: 350px;
+    position: absolute;
+    top: 40px;
+    right: 0px;
+    padding: 5px 10px;
+
+    background-color: white;
+    @include border_radius;
+    @include shadow;
+
+    .result {
+      border-bottom: 1px solid #cccccc;
+      padding: 5px;
+      min-height: $posterH;
+      display: block;
+    }
+    .result:last-child {
+      border-bottom-width: 0px;
+    }
+    .result:hover {
+      background-color: #e6e6e6;
+    }
+
+    .poster {
+      max-height: $posterH;
+      float: left;
+    }
+    .title {
+      margin: 10px;
+      font-size: 14px;
+      font-weight: bold;
+    }
   }
 }
 
@@ -85,6 +143,11 @@ html, body {
       text-indent: 10px;
     }
   }
+}
+
+#vis {
+  font-size: 12px;
+  fill: #666;
 }
 
 .clear {

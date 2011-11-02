@@ -2225,7 +2225,8 @@ html, body {
     margin-bottom: 10px; }
   #details .poster {
     float: left;
-    margin-right: 10px; }
+    margin-right: 10px;
+    width: 120px; }
   #details .col1, #details .col2 {
     float: left;
     width: 360px;

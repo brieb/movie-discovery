@@ -104,8 +104,6 @@ function filterToDVDs(movies) {
 }
 
 function setSeedMovie(movie, target) {
-  //clearElems(vis.selectAll('image.similar'));
-
   var seedX = visWidth/2 - moviePosterW/2;
   var seedY = visSize - (visSize/2 + moviePosterH/2);
 
@@ -114,8 +112,6 @@ function setSeedMovie(movie, target) {
   if (typeof target === 'undefined') {
     appendMovieToVis(movie);
   } else {
-    //clearElems(vis.selectAll('image.seed'));
-    //clearElems([seedMovie]);
     moveElem(movie);
   }
 
@@ -159,10 +155,10 @@ function appendMovieToVis(movie) {
     on("mouseover", function(e) {
     displayMovieDetails(movie);
   }).
-    //on("mouseout",
-       //function(e) {
-         //displayMovieDetails(seedMovie);
-       //}).
+    on("mouseout",
+       function(e) {
+         displayMovieDetails(seedMovie);
+       }).
          on("click",
             function(e) {
               setSeedMovie(movie, this);
@@ -369,7 +365,7 @@ function renderRatingsVis(ratings) {
   var ratingsVis = d3.select("#ratings_vis").
     append("svg:svg").
     attr("width", width).
-    attr("height", height);
+    attr("height", height + 60);
 
   ratingsVis.selectAll("rect").
     data(data).
@@ -397,14 +393,14 @@ function renderRatingsVis(ratings) {
   ratingsVis.selectAll("text.yAxis").
     data(data).
     enter().append("svg:text").
-    attr("x", function(datum, index) { return y(index) + height - 20; }).
+    attr("x", function(datum, index) { return y(index) + height + 20; }).
     attr("y", function(datum, index) { return -x(index) - 5; }).
     attr("dx", -barWidth/2 - 5).
-    attr("text-anchor", "middle").
+    attr("text-anchor", "left").
     attr("style", "font-size: 11;").
     text(function(datum) { return datum.type;}).
     attr("transform", "rotate(90)").
-    attr("fill", "white").
+    attr("fill", "black").
     attr("class", "yAxis");
 
 

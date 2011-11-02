@@ -149,6 +149,7 @@ function appendMovieToVis(movie) {
   movie.elem = vis.append("svg:image").
     attr("width", moviePosterW).
     attr("height", moviePosterH).
+    attr("class", "movie_poster").
     attr("x", movie.x).
     attr("y", movie.y).
     attr("xlink:href", movie.posters.thumbnail).

@@ -2251,5 +2251,8 @@ html, body {
   font-size: 12px;
   fill: #555; }
 
+.movie_poster:hover {
+  cursor: pointer; }
+
 .clear {
   clear: both; }

@@ -15,9 +15,6 @@ var barThickness = 1;
 
 var seedMovie = null;
 
-var seedMovieElem = null;
-var similarMovieElems = [];
-
 var numMoviesSimilarTo = 5;
 
 $(document).ready(function() {
@@ -107,68 +104,77 @@ function filterToDVDs(movies) {
 }
 
 function setSeedMovie(movie, target) {
-  clearElems(vis.selectAll('image.similar'));
+  //clearElems(vis.selectAll('image.similar'));
 
   var seedX = visWidth/2 - moviePosterW/2;
   var seedY = visSize - (visSize/2 + moviePosterH/2);
 
+  movie.x = seedX;
+  movie.y = seedY;
   if (typeof target === 'undefined') {
-    appendMovieToVis(movie, seedX, seedY, 'seed');
+    appendMovieToVis(movie);
   } else {
-    clearElems(vis.selectAll('image.seed'));
-    d3.select(target).
-      transition().
-      attr("class", 'seed').
-      attr("x", seedX).
-      attr("y", seedY);
+    //clearElems(vis.selectAll('image.seed'));
+    //clearElems([seedMovie]);
+    moveElem(movie);
   }
+
+  displayMovieDetails(movie);
 
   $.when(getMoviesSimilarTo(movie)).
     then(function() {
-    //$.when(getMoviePlotImdb(movie)).
-      //then(function() {
-      displayMovieDetails(movie);
       plotMoviesSimilarTo(movie);
-    //});
+      seedMovie = movie;
   });
-
-  seedMovie = movie;
 }
 
 function convertToSeed(movie, target) {
 
 }
 
-function clearElems(elems) {
-  elems.transition().style("opacity", 0).remove();
+function clearElems(movies) {
+  for (var i = 0; i < movies.length; i += 1) {
+    var elem = movies[i].elem;
+    elem.
+      transition().
+      style("opacity", 0).
+      remove();
+  };
 }
 
-function appendMovieToVis(movie, x, y, selClass) {
-  vis.append("svg:image").
-    attr("class", selClass).
+function moveElem(movie) {
+  return movie.elem.
+    transition().
+    attr("x", movie.x).
+    attr("y", movie.y);
+}
+
+function appendMovieToVis(movie) {
+  movie.elem = vis.append("svg:image").
     attr("width", moviePosterW).
     attr("height", moviePosterH).
-    attr("x", x).
-    attr("y", y).
+    attr("x", movie.x).
+    attr("y", movie.y).
     attr("xlink:href", movie.posters.thumbnail).
     on("mouseover", function(e) {
-         displayMovieDetails(movie);
-       }).
-         on("mouseout",
+    displayMovieDetails(movie);
+  }).
+    //on("mouseout",
+       //function(e) {
+         //displayMovieDetails(seedMovie);
+       //}).
+         on("click",
             function(e) {
-              displayMovieDetails(seedMovie);
-            }).
-              on("click",
-                 function(e) {
-                   setSeedMovie(movie, this);
-                 }).
-                   style("opacity", 0).
-                   transition().
-                   style("opacity", 1);
+              setSeedMovie(movie, this);
+            });
 }
 
 function plotMoviesSimilarTo(movie) {
+  calcEucDistForSimilarTo(movie);
   calcQuadrantsForSimilarTo(movie);
+
+  var commonSim = getCommonSimilarMovies(movie, seedMovie);
+  clearElems(commonSim.toRemove);
 
   var x = function(v) {
     return visWidth/2 + v*moviePosterW - moviePosterW/2;
@@ -177,37 +183,111 @@ function plotMoviesSimilarTo(movie) {
     return visSize - (visSize/2 + v*moviePosterH + moviePosterH/2);
   };
 
-  var q1X = 1;
-  var q1Y = 1;
-  var q2X = -1;
-  var q2Y = 1;
-  var q3X = -1;
-  var q3Y = -1;
-  var q4X = 1;
-  var q4Y = -1;
+  var quads = [];
+  for (var i = 0; i < 4; i += 1) {
+    quads.push([]);
+  };
 
   for (var i = 0; i < movie.similar.length; i += 1) {
     var curMovie = movie.similar[i];
+    quads[curMovie.quad].push(curMovie);
+  }
 
-    switch (curMovie.quad) {
-      case 1:
-        appendMovieToVis(curMovie, x(q1X), y(q1Y), 'similar');
-      q1X++;
-      break;
-      case 2:
-        appendMovieToVis(curMovie, x(q2X), y(q2Y), 'similar');
-      q2X--;
-      break;
-      case 3:
-        appendMovieToVis(curMovie, x(q3X), y(q3Y), 'similar');
-      q3X--;
-      break;
-      case 4:
-        appendMovieToVis(curMovie, x(q4X), y(q4Y), 'similar');
-      q4X++;
-      break;
+  for (var i = 0; i < quads.length; i += 1) {
+    quads[i].sort(function(a,b) {
+      return (a.eucDist < b.eucDist) ? -1 :
+        (a.eucDist > b.eucDist) ? 1 : 0;
+    });
+  }
+
+  for (var i = 0; i < quads[0].length; i += 1) {
+    quads[0][i].y = y(1);
+    quads[0][i].x = x(i+1);
+  }
+  for (var i = 0; i < quads[1].length; i += 1) {
+    quads[1][i].y = y(1);
+    quads[1][i].x = x(-1 * (i+1));
+  }
+  for (var i = 0; i < quads[2].length; i += 1) {
+    quads[2][i].y = y(-1);
+    quads[2][i].x = x(-1 * (i+1));
+  }
+  for (var i = 0; i < quads[3].length; i += 1) {
+    quads[3][i].y = y(-1);
+    quads[3][i].x = x(i+1);
+  }
+
+  for (var i = 0; i < commonSim.toAdd.length; i += 1) {
+    var curMovie = commonSim.toAdd[i];
+    appendMovieToVis(curMovie);
+  }
+
+  for (var i = 0; i < commonSim.toKeep.length; i+= 1) {
+    var curMovie = commonSim.toKeep[i];
+    moveElem(curMovie);
+  }
+}
+
+function getCommonSimilarMovies(newSeedMovie, oldSeedMovie) {
+  if (oldSeedMovie === null) {
+    return {
+      toKeep: [],
+      toRemove: [],
+      toAdd: newSeedMovie.similar
+    };   
+  }
+
+  var toKeep = [];
+  var toAdd = [];
+  var toRemove = [];
+
+  var oldSeedPresent = false;
+  for (var i = 0; i < newSeedMovie.similar.length; i += 1) {
+    var isPresent = false;
+
+    var curNew = newSeedMovie.similar[i];
+
+    for (var j = 0; j < oldSeedMovie.similar.length; j += 1) {
+      var curOld = oldSeedMovie.similar[j];
+
+      if (curNew.id === curOld.id) {
+        curNew.elem = curOld.elem;
+        toKeep.push(curNew);
+        isPresent = true;
+      } else {
+        if (curOld.id !== newSeedMovie.id) {
+          var addToRemove = true;
+          for (var k = 0; k < toRemove.length; k += 1) {
+            var rem = toRemove[k];
+            if (curOld.id === rem.id) {
+              addToRemove = false;
+            } 
+          }
+          if (addToRemove) {
+            toRemove.push(curOld);
+          }
+        }
+      }
+
     }
 
+    if (curNew.id === oldSeedMovie.id) {
+      oldSeedPresent = true;
+      curNew.elem = oldSeedMovie.elem;
+      toKeep.push(curNew);
+    } else if (!isPresent) {
+      toAdd.push(curNew);
+    }
+  }
+
+  if (!oldSeedPresent) {
+    toRemove.push(oldSeedMovie);
+  }
+
+  return {
+    toKeep: toKeep,
+    toRemove: toRemove,
+    toAdd: toAdd
   };
 }
 
@@ -400,6 +480,13 @@ function getMoviesSimilarTo(movie) {
   );
 }
 
+function calcEucDistForSimilarTo(movie) {
+  for (var i = 0; i < movie.similar.length; i += 1) {
+    var curMovie = movie.similar[i];
+    curMovie.eucDist = calcEucDist(movie, curMovie);
+  }
+}
+
 function calcQuadrantsForSimilarTo(movie) {
   for (var i = 0; i < movie.similar.length; i += 1) {
     var curMovie = movie.similar[i];
@@ -410,16 +497,16 @@ function calcQuadrantsForSimilarTo(movie) {
     movie.ratings.critics_score;
 
     if (!lessX && !lessY) {
-      curMovie.quad = 1;
+      curMovie.quad = 0;
     }
     if (lessX && !lessY) {
-      curMovie.quad = 2;
+      curMovie.quad = 1;
     }
     if (lessX && lessY) {
-      curMovie.quad = 3;
+      curMovie.quad = 2;
     }
     if (!lessX && lessY) {
-      curMovie.quad = 4;
+      curMovie.quad = 3;
     }
   }
 }
